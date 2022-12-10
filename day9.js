@@ -8,6 +8,16 @@ L 5
 R 2`;
 const testArr = testData.split('\n');
 
+const test2 = `R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20`
+const testArr2 = test2.split('\n');
+
 const data = `D 2
 R 2
 U 2
@@ -2009,9 +2019,6 @@ U 4
 D 7
 R 3`
 const dataArr = data.split('\n')
-
-let tailPositions = [];
-
 const corrections = {
   up: [0, 1],
   down: [0, -1],
@@ -2049,7 +2056,7 @@ const findCorrection = (head, tail) => {
   }
 }
 
-const moveRope = (head, tail, dir, dist) => {
+const moveRope = (head, tail, dir, dist, tailPositions) => {
   for(let i = 0; i < dist; i++) {
     switch(dir) {
       case 'R':
@@ -2081,13 +2088,50 @@ const moveRope = (head, tail, dir, dist) => {
   return [head, tail];
 }
 
+const moveLongRope = (positions, dir, dist, tailPositions) => {
+  for(let i = 0; i < dist; i++) {
+    switch(dir) {
+      case 'R':
+        positions[0][0]++;
+        break;
+      case 'L':
+        positions[0][0]--;
+        break;
+      case 'U':
+        positions[0][1]++;
+        break;
+      case 'D':
+        positions[0][1]--;
+        break;
+      default:
+        break;
+    }
+
+    for(let pos = 0; pos < positions.length - 1; pos++) {
+      //! Needs a correction?
+      let needToMoveTail = (findRopeDistance(positions[pos], positions[+pos + 1]) > Math.sqrt(2));
+      if(!needToMoveTail) break;
+
+
+      //! Correct the tail
+      let correction = corrections[findCorrection(positions[pos], positions[+pos + 1])];
+      positions[+pos + 1] = [positions[+pos + 1][0] + correction[0], positions[+pos + 1][1] + correction[1]];
+    }
+    
+    tailPositions.push(positions[positions.length - 1]);
+  }
+
+  return positions;
+}
+
 const partOne = (input) => {
+  let tailPositions = [];
   let head = [0,0];
   let tail = [0,0];
 
   for(line of input) {
     const [dir, dist] = line.split(' ');
-    [head, tail] = moveRope(head, tail, dir, dist);
+    [head, tail] = moveRope(head, tail, dir, dist, tailPositions);
   }
   
   let uniqueLocations = [];
@@ -2102,4 +2146,37 @@ const partOne = (input) => {
   return uniqueLocations.length
 }
 
+const partTwo = (input) => {
+  let positions = [
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+  ]
+  let tailPositions = [];
+
+  for(line of input) {
+    const [dir, dist] = line.split(' ');
+    positions = moveLongRope(positions, dir, dist, tailPositions)
+  }
+
+  let uniqueLocations = [];
+  for(position of tailPositions) {
+    let isNew = true;
+    for(unique of uniqueLocations) {
+      if(position[0] == unique[0] && position[1] == unique[1]) isNew = false;
+    }
+    if(isNew) uniqueLocations.push(position);
+  }
+
+  return uniqueLocations.length
+}
+
 console.log(partOne(dataArr));
+console.log(partTwo(dataArr));
